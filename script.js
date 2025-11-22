@@ -8,7 +8,7 @@ const CONFIG = {
     categoryId: 'category-select'
 };
 
-const amazonTag = 'affiliationOc2-20';
+const amazonTag = 'affiliation0c2-20'; // CORRECTION 1 : Changé 'O' en '0'
 const PRODUCTS_PER_PAGE = 10;
 
 let ALL_PRODUCTS = [];
@@ -23,7 +23,8 @@ const pagination = document.getElementById(CONFIG.paginationId);
 const categorySelect = document.getElementById(CONFIG.categoryId);
 
 function generateAffiliateLink(productName) {
-    return `https://www.amazon.ca/s?k=${encodeURIComponent(productName)}&tag=${amazonTag}`;
+    // CORRECTION 2 : Renvoie vers la page d'accueil d'Amazon au lieu d'un lien de recherche interdit.
+    return `https://www.amazon.ca/ref=nav_logo?tag=${amazonTag}`;
 }
 
 function renderProducts(list) {
@@ -158,12 +159,12 @@ function applyFilters() {
 }
 
 // ---------- COOKIE WIDGET ----------
-const cookieW  = document.getElementById('cookie-widget');
+const cookieW = document.getElementById('cookie-widget');
 const cookieOK = document.getElementById('cookie-ok');
-const cookieX  = document.getElementById('cookie-close');
-function hideCookie() { cookieW.classList.add('hidden'); localStorage.setItem('cookieOk','1'); }
+const cookieX = document.getElementById('cookie-close');
+function hideCookie() { cookieW.classList.add('hidden'); localStorage.setItem('cookieOk', '1'); }
 cookieOK.onclick = hideCookie; cookieX.onclick = hideCookie;
-if(localStorage.getItem('cookieOk')==='1') cookieW.classList.add('hidden');
+if (localStorage.getItem('cookieOk') === '1') cookieW.classList.add('hidden');
 
 // ---------- START ----------
-if(document.readyState==='loading') { document.addEventListener('DOMContentLoaded', loadProducts); } else { loadProducts(); }
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', loadProducts); } else { loadProducts(); }
