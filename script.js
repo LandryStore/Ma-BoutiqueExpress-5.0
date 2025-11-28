@@ -8,7 +8,8 @@ const CONFIG = {
     categoryId: 'category-select'
 };
 
-const amazonTag = 'affiliation0c2-20'; // CORRECTION 1 : Changé 'O' en '0'
+// ✅ CORRECTION APPLIQUÉE : utilisation exacte de 'affiliatio0c2-20' (sans 'n', avec zéro)
+const amazonTag = 'affiliatio0c2-20';
 const PRODUCTS_PER_PAGE = 10;
 
 let ALL_PRODUCTS = [];
@@ -22,9 +23,10 @@ const refreshBtn = document.getElementById(CONFIG.refreshId);
 const pagination = document.getElementById(CONFIG.paginationId);
 const categorySelect = document.getElementById(CONFIG.categoryId);
 
+// ✅ CORRECTION : fonction de secours améliorée (évite les espaces et utilise un lien valide)
 function generateAffiliateLink(productName) {
-    // CORRECTION 2 : Renvoie vers la page d'accueil d'Amazon au lieu d'un lien de recherche interdit.
-    return `https://www.amazon.ca/ref=nav_logo?tag=${amazonTag}`;
+    const query = encodeURIComponent(productName || 'produit');
+    return `https://www.amazon.ca/s?k=${query}&tag=${amazonTag}`;
 }
 
 function renderProducts(list) {
@@ -50,7 +52,14 @@ function renderProducts(list) {
         const img = p.image?.trim() || 'https://via.placeholder.com/300x300?text=No+Image';
         const price = p.price || '';
         const description = p.description || '';
-        const link = p.link?.trim() ? (p.link.includes('tag=') ? p.link : p.link + '?tag=' + amazonTag) : generateAffiliateLink(name);
+
+        // ✅ CORRECTION : ajout propre du tag d'affiliation
+        let link = p.link?.trim() || generateAffiliateLink(name);
+        if (link && !link.includes('tag=')) {
+            // Ajoute le tag proprement, sans doublon ni espace
+            const separator = link.includes('?') ? '&' : '?';
+            link = `${link}${separator}tag=${amazonTag}`;
+        }
 
         const card = document.createElement('div');
         card.className = 'card';
@@ -113,12 +122,22 @@ function renderPagination(totalItems) {
 
     pagination.innerHTML = html;
 
-    pagination.querySelector('.prev-btn') && (pagination.querySelector('.prev-btn').onclick = e => {
-        e.preventDefault(); currentPage--; renderProducts(filteredProducts);
-    });
-    pagination.querySelector('.next-btn') && (pagination.querySelector('.next-btn').onclick = e => {
-        e.preventDefault(); currentPage++; renderProducts(filteredProducts);
-    });
+    const prevBtn = pagination.querySelector('.prev-btn');
+    const nextBtn = pagination.querySelector('.next-btn');
+    if (prevBtn) {
+        prevBtn.onclick = e => {
+            e.preventDefault();
+            currentPage--;
+            renderProducts(filteredProducts);
+        };
+    }
+    if (nextBtn) {
+        nextBtn.onclick = e => {
+            e.preventDefault();
+            currentPage++;
+            renderProducts(filteredProducts);
+        };
+    }
 }
 
 async function loadProducts() {
@@ -130,15 +149,20 @@ async function loadProducts() {
         filteredProducts = ALL_PRODUCTS;
         currentPage = 1;
 
-        // Remplir le select de catégories avec "Tous les catégories"
         const categories = ['all', ...new Set(ALL_PRODUCTS.map(p => p.category))];
-        categorySelect.innerHTML = categories.map(c => `<option value="${c}">${c === 'all' ? 'Tous les catégories' : c}</option>`).join('');
+        if (categorySelect) {
+            categorySelect.innerHTML = categories.map(c =>
+                `<option value="${c}">${c === 'all' ? 'Tous les catégories' : c}</option>`
+            ).join('');
+        }
 
         renderProducts(ALL_PRODUCTS);
     } catch (e) {
         console.error(e);
-        grid.innerHTML = '<div style="text-align:center; padding:3rem; color:red;">Erreur de chargement des produits</div>';
-        pagination.innerHTML = '';
+        if (grid) {
+            grid.innerHTML = '<div style="text-align:center; padding:3rem; color:red;">Erreur de chargement des produits</div>';
+        }
+        if (pagination) pagination.innerHTML = '';
     } finally {
         if (refreshBtn) refreshBtn.disabled = false;
     }
@@ -152,7 +176,7 @@ function applyFilters() {
     const category = categorySelect.value;
     filteredProducts = ALL_PRODUCTS.filter(p => {
         const matchCategory = category === 'all' || p.category === category;
-        const matchSearch = p.name?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q);
+        const matchSearch = (p.name?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q));
         return matchCategory && matchSearch;
     });
     renderProducts(filteredProducts);
@@ -162,9 +186,17 @@ function applyFilters() {
 const cookieW = document.getElementById('cookie-widget');
 const cookieOK = document.getElementById('cookie-ok');
 const cookieX = document.getElementById('cookie-close');
-function hideCookie() { cookieW.classList.add('hidden'); localStorage.setItem('cookieOk', '1'); }
-cookieOK.onclick = hideCookie; cookieX.onclick = hideCookie;
-if (localStorage.getItem('cookieOk') === '1') cookieW.classList.add('hidden');
+function hideCookie() {
+    if (cookieW) cookieW.classList.add('hidden');
+    localStorage.setItem('cookieOk', '1');
+}
+if (cookieOK) cookieOK.onclick = hideCookie;
+if (cookieX) cookieX.onclick = hideCookie;
+if (cookieW && localStorage.getItem('cookieOk') === '1') cookieW.classList.add('hidden');
 
 // ---------- START ----------
-if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', loadProducts); } else { loadProducts(); }
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadProducts);
+} else {
+    loadProducts();
+}
